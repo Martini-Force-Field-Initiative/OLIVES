@@ -1,0 +1,18 @@
+#include "martini_v3.0.0.itp"
+#include "martini_v3.0.0_solvents_v1.itp"
+#include "martini_v3.0.0_ions_v1.itp"
+#include "molecule_0.itp"
+#ifdef POSRES
+#include "posre_BB_0.itp"
+#endif
+#include "molecule_1.itp"
+#ifdef POSRES
+#include "posre_BB_1.itp"
+#endif
+
+[ system ]
+OLIVES in water
+
+[ molecules ]
+molecule_0    1
+molecule_1    1
