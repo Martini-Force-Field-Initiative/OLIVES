@@ -50,7 +50,7 @@ More advanced examples for constructing quaternary networks can be found in the 
 
 OLIVES and the contents of this repository are distributed under the Apache 2.0 license.
 
-    Copyright 2023 University of Aarhus
+    Copyright 2023 Aarhus University
 
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
