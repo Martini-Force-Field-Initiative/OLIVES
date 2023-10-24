@@ -1,5 +1,7 @@
 # OLIVES: A Go-like Model for Stabilizing Protein Structure via Hydrogen Bonding Beads in the Martini 3 Coarse-Grained Force Field
 
+What is a Martini without OLIVES?
+
 OLIVES is the name of an algorithm that identifices hydrogen bond networks in coarse-grained 
 protein structures which are used to implement a Go-like for Martini 3 proteins.
 
@@ -17,7 +19,8 @@ OLIVES require python 3.7 or greater, together with numpy, mdtraj, and networkx,
 
     pip install numpy mdtraj networkx
 
-To install exact versions of the packages OLIVES was tested with, run:
+The exact versions should not matter too much, but install networkx 2.3 or greater.
+To install exact package versions used during development, run:
 	
     pip install numpy==1.21.5 mdtraj==1.9.7 networkx==2.3
 
@@ -35,7 +38,7 @@ generating a topology (with default name molecule_0.itp);
 
 and then apply the OLIVES model via:
 
-    python3 OLIVES_v1.0_M3.0.0.py -c protein_CG.pdb -i molecule_0.itp
+    python3 OLIVES_v1.0_M3.0.0.py -c "protein_CG.pdb" -i "molecule_0.itp"
 
 This will automatically insert the OLIVES model into the molecule_0.itp topology. There is also an option to write out the OLIVES model in a separate .itp file.
 Note that we have left out the -dssp/-ss flags of martinize2 to avoid generating secondary structure restraints. 
@@ -44,7 +47,15 @@ OLIVES was tested using the -scfix flag, although the side chains conformations 
 Additional information files about the network can be written, see the the help command (-h). 
 The generated OLIVES pairs could be used to drive biased simulations due to the similarity to native contacts. 
 
-More advanced examples for constructing quaternary networks can be found in the tutorials folder in the source repository.
+OLIVES also comes with a basic multistate functionality. A two-state model can be created by providing two conformations of the same protein (must have matching topologies):
+
+    python3 OLIVES_v1.0_M3.0.0.py -c "protein_CG_conformation_1.pdb,protein_CG_conformation_2.pdb" -i molecule_0.itp --unique_pair_scaling "0.5,0.75"
+
+The enthalpy of contacts unique to each conformations will be scaled by --unique_pair_scaling. In this example the unique contacts for conformation 1 are downscaled by 0.5 and conformation 2 by 0.75.
+This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" is a first guees if building a model with unknown relative free energies. 
+Shared contacts (intersection) are not scaled (unless specified by the --ss_h_scaling and --tt_h_scaling flags), but instead have their minimum distance averaged.
+
+More examples on how to set up protein complexes with and without quaternary networks can be found in the tutorials folder in the source repository.
 
 ## License
 

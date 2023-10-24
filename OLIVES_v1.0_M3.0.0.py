@@ -12,14 +12,15 @@ def user_input():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', help='File containing the coarse-grained structure(s) of the protein in pdb format. Multiple conformations can be supplied separated using comma: conf1.pdb,conf2.pdb,conf3.pdb. The conformations must have the exact same topology.')
     parser.add_argument('-i', help='File containing the protein topology e.g. molecule_0.itp from martinize2.')
-    parser.add_argument('--ss_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the secondary network (default=0.55).')
-    parser.add_argument('--tt_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the tertiary network (default=0.55).')
-    parser.add_argument('--h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for both the secondary and tertiary networks (default=1.0).')
+    parser.add_argument('--ss_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the secondary (and quaternary) network (default=0.55).')
+    parser.add_argument('--tt_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the tertiary (and quaternary) network (default=0.55).')
+    parser.add_argument('--ss_h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for the secondary (and quaternary) network (default=1.0).')
+    parser.add_argument('--tt_h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for the tertiary (and quaternary) network (default=1.0).')
+    parser.add_argument('--unique_pair_scaling', type=str, default="1.0", help='Multistate mode: Scaling of the unique contacts in each conformation, provided as a comma separated sting e.g. "0.5,0.75". Shared contacts between conformations have their distances averaged.')
     parser.add_argument('--extend_itp', type=int, default=True, help='Extend the protein topology with the Go-like model (default=True).')
-    parser.add_argument('--unique_pair_scaling', type=str, default="1.0", help='Multistate mode: Scaling of the unique contacts in each conformation provided as a comma separated sting e.g. "0.5,0.75". Shared contacts have their distances averaged.')
     parser.add_argument('--write_separate_itp', type=bool, default=False, help='Writes the Go-like model as separate itp files to be included in the .top (default=False).')
-    parser.add_argument('--write_vmd_itp', type=bool, default=False, help='Writes an itp with the Go-like bonds as harmonic bonds for visualization with VMD (default=False).')
-    parser.add_argument('--write_bond_information_file', type=bool, default=False, help='Writes a datafile with the bead indices for each pair. Does set analysis in the case of multiple conformations (default=False).')
+    parser.add_argument('--write_vmd_itp', type=bool, default=False, help='Writes an itp with the Go-like bonds as harmonic bonds for visualization with VMD or use OLIVES as an elastic network (default=False).')
+    parser.add_argument('--write_bond_information_file', type=bool, default=False, help='Writes a datafile with the bead indices for each contact pair. Does set analysis in the case of multiple conformations (default=False).')
     parser.add_argument('--silent', type=bool, default=False, help='sshhh (default=False)')
     args = parser.parse_args()
     return args
@@ -27,12 +28,12 @@ def user_input():
 ##### CHECK INPUT #####
 
 args = user_input()
-
 input_conformations = list(args.c.split(","))
 itp_CG = args.i
 secondary_cutoff = args.ss_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter
 tertiary_cutoff = args.tt_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter 
-enthalpy_scaling = args.h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
+secondary_enthalpy_scaling = args.ss_h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
+tertiary_enthalpy_scaling = args.tt_h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
 unique_pair_scaling = [float(i) for i in list(args.unique_pair_scaling.split(","))]  #[kJ/mol] - Is multiplied with the relative hbond enthalpies of conformational unique HBs when providing multiply conformations - hyperparameter
 harm_k = 500 #Used for visualization, but could be set if you want OLIVES as an elastic network
 
@@ -556,8 +557,8 @@ secondary_pair_multiples_dict = construct_pair_multiples_dict(all_secondary_pair
 tertiary_pair_multiples_dict = construct_pair_multiples_dict(all_tertiary_pairs,all_tertiary_pairs_dists_energies)
 
 #Combine minimas and format the output
-secondary_harm_potentials,secondary_LJ_potentials,secondary_exclusions = combine_and_format_potentials(secondary_pair_multiples_dict,"secondary",unique_secondary_pairs_for_scaling,unique_pair_scaling,enthalpy_scaling)
-tertiary_harm_potentials,tertiary_LJ_potentials,tertiary_exclusions = combine_and_format_potentials(tertiary_pair_multiples_dict,"tertiary",unique_tertiary_pairs_for_scaling,unique_pair_scaling,enthalpy_scaling)
+secondary_harm_potentials,secondary_LJ_potentials,secondary_exclusions = combine_and_format_potentials(secondary_pair_multiples_dict,"secondary",unique_secondary_pairs_for_scaling,unique_pair_scaling,secondary_enthalpy_scaling)
+tertiary_harm_potentials,tertiary_LJ_potentials,tertiary_exclusions = combine_and_format_potentials(tertiary_pair_multiples_dict,"tertiary",unique_tertiary_pairs_for_scaling,unique_pair_scaling,tertiary_enthalpy_scaling)
 
 ##### WRAP-UP #####
 if args.extend_itp: 
