@@ -52,8 +52,8 @@ OLIVES also comes with a basic multistate functionality. A two-state model can b
     python3 OLIVES_v1.0_M3.0.0.py -c "protein_CG_conformation_1.pdb,protein_CG_conformation_2.pdb" -i molecule_0.itp --unique_pair_scaling "0.5,0.75"
 
 The enthalpy of contacts unique to each conformations will be scaled by --unique_pair_scaling. In this example the unique contacts for conformation 1 are downscaled by 0.5 and conformation 2 by 0.75.
-This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" is a first guees if building a model with unknown relative free energies. 
-Shared contacts (intersection) are not scaled (unless specified by the --ss_h_scaling and --tt_h_scaling flags), but instead have their minimum distance averaged.
+This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" as an initial guees, if building a model with unknown relative free energies. 
+Shared contacts between conformations are not scaled (unless specified by the --ss_h_scaling and --tt_h_scaling flags), but instead have their minimum distance averaged.
 
 More examples on how to set up protein complexes with and without quaternary networks can be found in the tutorials folder in the source repository.
 
