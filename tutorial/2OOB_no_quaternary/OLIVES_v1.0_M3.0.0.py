@@ -16,11 +16,11 @@ def user_input():
     parser.add_argument('--tt_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the tertiary network (default=0.55).')
     parser.add_argument('--h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for both the secondary and tertiary networks (default=1.0).')
     parser.add_argument('--extend_itp', type=int, default=True, help='Extend the protein topology with the Go-like model (default=True).')
-    parser.add_argument('--unique_pair_scaling', type=float, default=0.5, help='Multistate mode: Scaling of the unique contacts in each conformation. Shared contacts have their distances averaged (default=0.5).')
+    parser.add_argument('--unique_pair_scaling', type=str, default="1.0", help='Multistate mode: Scaling of the unique contacts in each conformation provided as a comma separated sting e.g. "0.5,0.75". Shared contacts have their distances averaged.')
     parser.add_argument('--write_separate_itp', type=bool, default=False, help='Writes the Go-like model as separate itp files to be included in the .top (default=False).')
     parser.add_argument('--write_vmd_itp', type=bool, default=False, help='Writes an itp with the Go-like bonds as harmonic bonds for visualization with VMD (default=False).')
     parser.add_argument('--write_bond_information_file', type=bool, default=False, help='Writes a datafile with the bead indices for each pair. Does set analysis in the case of multiple conformations (default=False).')
-    parser.add_argument('--silent', type=int, default=False, help='sshhh (default=False)')
+    parser.add_argument('--silent', type=bool, default=False, help='sshhh (default=False)')
     args = parser.parse_args()
     return args
 
@@ -32,17 +32,21 @@ input_conformations = list(args.c.split(","))
 itp_CG = args.i
 secondary_cutoff = args.ss_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter
 tertiary_cutoff = args.tt_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter 
-enthalpy_scaling = args.h_scaling  #[kJ/mol] - Is multiplied to the relative hbond enthalpies - hyperparameter
-unique_pair_scaling = args.unique_pair_scaling  #[kJ/mol] - Is multiplied to the relative hbond enthalpies of unique HBs when providing multiply conformations - hyperparameter
-harm_k = 500
+enthalpy_scaling = args.h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
+unique_pair_scaling = [float(i) for i in list(args.unique_pair_scaling.split(","))]  #[kJ/mol] - Is multiplied with the relative hbond enthalpies of conformational unique HBs when providing multiply conformations - hyperparameter
+harm_k = 500 #Used for visualization, but could be set if you want OLIVES as an elastic network
 
-#Load the conformations - could easily be modified to take in xtc files
+#Load the conformations
 pdbs_CG = [md.load(pdb_CG) for pdb_CG in input_conformations]
 
 #Check if the number of beads match in the topologies
 natoms = [pdb.n_atoms for pdb in pdbs_CG]
 if not np.sum(natoms) == len(natoms)*np.min(natoms):
     raise ValueError('Your input conformations do not have the same number of beads. Please check your topology.')
+
+#Check if the number of conformations match in the number of scaling values
+if not len(input_conformations) == len(unique_pair_scaling):
+    raise ValueError('The number of input conformations do not match the number of scaling values provided by the --unique_pair_scaling flag.')
 
 ##### DEFINITION OF THE MODEL #####
 
@@ -101,7 +105,7 @@ energy_dict = {"IMA-AMD":6.55*4.184,  #4.184 converts from kcal/mol -> kJ/mol
                "KEA-HYD":3.54*4.184,           
                "KEA-IND":5.12*4.184,
                "KEA-IMD":5.78*4.184,
-               "PIA-AMD":22.2329/2,   #Divide by 2 because we split the pi interaction over the 2 outmost beads - important for the ring conformation (alternative could be to place a VS at the benzene center)
+               "PIA-AMD":22.2329/2,   #Divide by 2 because we split the pi interaction over the 2 outmost beads - important for the ring conformation
                "PIA-HYD":np.mean([19.7648,21.7831])/2,  #here we mean the two results from the paper
                "PIA-IND":8.776/2,
                "PIA-IMD":25.771/2}
@@ -128,7 +132,6 @@ energy_dict = {"IMA-AMD":6.55*4.184,  #4.184 converts from kcal/mol -> kJ/mol
 
 ##### FUNCTIONS #####
 def knowledge_based_checks(cut_pairs,cut_dists,filters):
-    print("Splitting into secondary (backbone<->backbone) and tertiary networks (backbone<->sidechain + sidechain<->sidechain)")
     #Unpack filters
     a_ndx_to_bead_name = filters[0]
     a_ndx_to_res_name = filters[1]
@@ -298,9 +301,6 @@ def get_pair_set_information(input_conformations,all_secondary_pairs,all_tertiar
         info_tertiary_pairs.append(str(sorted([(p[0]+1,p[1]+1) for p in unique_pairs_conf2])).split())
         unique_tertiary_pairs_for_scaling.append(sorted([(p[0],p[1]) for p in unique_pairs_conf2]))
         
-        unique_secondary_pairs_for_scaling = [pair for sublist in unique_secondary_pairs_for_scaling for pair in sublist] #flatten list
-        unique_tertiary_pairs_for_scaling = [pair for sublist in unique_tertiary_pairs_for_scaling for pair in sublist] #flatten list
-        
         #intersection 
         intersection = set(all_secondary_pairs[0]) & set(all_secondary_pairs[1])
         info_secondary_pairs.append('; intersection of {}'.format(str(input_conformations)).split())
@@ -338,9 +338,6 @@ def get_pair_set_information(input_conformations,all_secondary_pairs,all_tertiar
             info_tertiary_pairs.append(str(sorted([(p[0]+1,p[1]+1) for p in unique_pairs_conf])).split())
             unique_tertiary_pairs_for_scaling.append(sorted([(p[0],p[1]) for p in unique_pairs_conf]))
         
-        unique_secondary_pairs_for_scaling = [pair for sublist in unique_secondary_pairs_for_scaling for pair in sublist] #flatten list
-        unique_tertiary_pairs_for_scaling = [pair for sublist in unique_tertiary_pairs_for_scaling for pair in sublist] #flatten list
-        
         #intersection 
         set_list = [set(l) for l in all_secondary_pairs]
         intersection = set.intersection(*set_list)
@@ -356,6 +353,7 @@ def get_pair_set_information(input_conformations,all_secondary_pairs,all_tertiar
     return info_secondary_pairs, info_tertiary_pairs, unique_secondary_pairs_for_scaling, unique_tertiary_pairs_for_scaling
 
 def construct_pair_multiples_dict(all_pairs,all_pairs_dists_energies):
+    #Helper function that puts intersection pairs into a dict. Distances of interaction pairs are later averaged
     pairs_dict = {}
     for s,structure_pairs in enumerate(all_pairs):
         for p,pair in enumerate(structure_pairs):
@@ -368,6 +366,7 @@ def construct_pair_multiples_dict(all_pairs,all_pairs_dists_energies):
     return pairs_dict
 
 def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pair_scaling,enthalpy_scaling):
+    #Formats the potentials before inserting into .itp
     #GROMACS function types
     harm_function_type = 1
     LJ_function_type = 1
@@ -378,11 +377,17 @@ def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pai
 
     for pair, dist_energy in pairs_dict.items():
         dists = np.array(dist_energy)[:,0]
-        if pair in unique_pairs:
-            HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling*unique_pair_scaling
+        if len(unique_pair_scaling) > 1:
+            for i,conf in enumerate(unique_pairs):
+                if pair in conf:
+                    HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling*unique_pair_scaling[i]
+                    break
+                else:
+                    HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling
         else:
             HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling
         mean_dist = np.mean(dists)  #Naive combination of minimas - ideally we would change the functional form, however we are very limited in GROMACS since tabulated potentials are currently unsupported
+        #In practice this works well because the distance cutoff is small, so the standard deviation of the above mean is very small (i.e. the difference in distance between beads in two conformations having the same contact)
         
         harm_pairs.append([str(pair[0]+1),str(pair[1]+1),f"{harm_function_type}","{:.10f}".format(mean_dist),"{:.10f}".format(harm_k)])
         
@@ -392,7 +397,7 @@ def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pai
         
         if networktype == "tertiary":
             LJ_pairs.append([str(pair[0]+1),str(pair[1]+1),f"{LJ_function_type}","{:.10f}".format(mean_dist/np.power(2,1/6)),"{:.10f}".format(HB_energy)])
-
+    
     return harm_pairs,LJ_pairs,excluded_pairs
 
 ##### RUN PROGRAM #####
@@ -484,7 +489,8 @@ for p,pdb_CG in enumerate(pdbs_CG):
   
     matched_teriary_pairs_pass1_residues = [(a_ndx_to_res_ndx[p[0]],a_ndx_to_res_ndx[p[1]]) for p in matched_tertiary_pairs_pass1]
     asn_gln_arg_pairs = []
-    #The following decision tree is ugly but difficult to implement chemical information without it
+    
+    #TODO: The following decision tree is ugly but difficult to implement specific chemical information without it
     for p in remaining_pairs:
         if a_ndx_to_res_name[p[0]] == "GLN" or a_ndx_to_res_name[p[0]] == "ASN" or a_ndx_to_res_name[p[0]] == "ARG":
             if a_ndx_to_bead_name[p[0]] == 'BB':
@@ -526,7 +532,7 @@ for p,pdb_CG in enumerate(pdbs_CG):
     matched_tertiary_pairs = sorted(matched_tertiary_pairs_pass1 + matched_tertiary_pairs_pass2)
     matched_tertiary_pairs_dists_energies = [[pair[0],pair[1],pair[2]] for pair in checked_tertiary_pairs_dists_energies if pair[0] in matched_tertiary_pairs]
 
-    #collect data for each conformation
+    #collect data from each conformation
     all_secondary_pairs.append(matched_secondary_pairs)  
     all_secondary_pairs_dists_energies.append(matched_secondary_pairs_dists_energies)
     all_tertiary_pairs.append(matched_tertiary_pairs)  
