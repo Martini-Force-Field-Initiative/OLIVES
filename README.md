@@ -1,4 +1,4 @@
-# OLIVES: A Go-like Model for Stabilizing Protein Structure via Hydrogen Bonding Beads in the Martini 3 Coarse-Grained Force Field
+# OLIVES: A Go-like Model for Stabilizing Protein Structure via Hydrogen Bonding Native Contacts in the Martini 3 Coarse-Grained Force Field
 
 What is a Martini without OLIVES?
 
