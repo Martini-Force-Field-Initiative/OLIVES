@@ -43,7 +43,7 @@ and then apply the OLIVES model via:
 This will automatically insert the OLIVES model into the molecule_0.itp topology. There is also an option to write out the OLIVES model in a separate .itp file.
 Note that we have left out the -dssp/-ss flags of martinize2 to avoid generating secondary structure restraints. 
 Secondary structure restrains could be included using -dssp/-ss flags, if a static secondary structure is desired.
-OLIVES was tested using the -scfix flag, although the side chains conformations are also restrained by the OLIVES LJ potentials, and could potentially not be needed. 
+OLIVES was tested using the -scfix flag, although the side chains conformations are also influenced by the OLIVES LJ potentials. 
 Additional information files about the network can be written, see the the help command (-h). 
 The generated OLIVES pairs could be used to drive biased simulations due to the similarity to native contacts. 
 
