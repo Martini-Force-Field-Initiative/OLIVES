@@ -5,9 +5,9 @@ What is a Martini without OLIVES?
 OLIVES is the name of an algorithm that identifices hydrogen bond networks in coarse-grained 
 protein structures which are used to implement a Go-like for Martini 3 proteins.
 
-OLIVES enables simulations of Martini 3 proteins without the use if DSSP defined secondary structure restraints,
+OLIVES enables simulations of Martini 3 proteins without the use of DSSP defined secondary structure restraints,
 allowing for more realistic flexibility and at the same time speeds up simulations due to fewer bias potentials. 
-The Go-like model has been validated for a range of protein complexes as described in Pedersen et al. (2024). 
+The Go-like model has been validated for a range of protein complexes as described in Pedersen et al. (2024) (DOI: 10.26434/chemrxiv-2023-6d61w). 
 
 ## Citation
 
@@ -21,7 +21,7 @@ DOI: 10.26434/chemrxiv-2023-6d61w
 
 ## Installation
 
-OLIVES require python 3.7 or greater, together with numpy, mdtraj, and networkx, which can be installed with pip:
+OLIVES requires python 3.7 or greater, together with numpy, mdtraj, and networkx, which can be installed with pip:
 
     pip install numpy mdtraj networkx
 
