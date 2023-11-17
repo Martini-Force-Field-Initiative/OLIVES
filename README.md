@@ -11,7 +11,7 @@ The Go-like model has been validated for a range of protein complexes as describ
 
 ## Citation
 
-Preprint:
+ChemRxiv Preprint (https://chemrxiv.org/engage/chemrxiv/article-details/655728cc2c3c11ed71929939)
 
 OLIVES: A Go-like Model for Stabilizing Protein Structure via Hydrogen Bonding Native Contacts in the Martini 3 Coarse-Grained Force Field
 
