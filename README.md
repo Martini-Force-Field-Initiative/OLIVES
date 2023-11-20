@@ -2,11 +2,11 @@
 
 What is a Martini without OLIVES?
 
-OLIVES is the name of an algorithm that identifices hydrogen bond networks in coarse-grained 
-protein structures which are used to implement a Go-like for Martini 3 proteins.
+OLIVES is the name of an algorithm that identifies hydrogen bond networks in coarse-grained 
+protein structures which are used to implement a Go-like model for Martini 3 proteins.
 
 OLIVES enables simulations of Martini 3 proteins without the use of DSSP defined secondary structure restraints,
-allowing for more realistic flexibility and at the same time speeds up simulations due to fewer bias potentials. 
+allowing for more realistic flexibility and at the same time speed-up simulations due to fewer bias potentials. 
 The Go-like model has been validated for a range of protein complexes as described in Pedersen et al. (2024) (DOI: 10.26434/chemrxiv-2023-6d61w). 
 
 ## Citation
@@ -51,14 +51,14 @@ Note that we have left out the -dssp/-ss flags of martinize2 to avoid generating
 Secondary structure restrains could be included using -dssp/-ss flags, if a static secondary structure is desired.
 OLIVES was tested using the -scfix flag, although the side chains conformations are also influenced by the OLIVES LJ potentials. 
 Additional information files about the network can be written, see the the help command (-h). 
-The generated OLIVES pairs could be used to drive biased simulations due to the similarity to native contacts. 
+The generated OLIVES pairs could be used to drive biased simulations due to their similarity to native contacts. 
 
 OLIVES also comes with a basic multistate functionality. A two-state model can be created by providing two conformations of the same protein (must have matching topologies):
 
     python3 OLIVES_v1.0_M3.0.0.py -c "protein_CG_conformation_1.pdb,protein_CG_conformation_2.pdb" -i molecule_0.itp --unique_pair_scaling "0.5,0.75"
 
-The enthalpy of contacts unique to each conformations will be scaled by --unique_pair_scaling. In this example the unique contacts for conformation 1 are downscaled by 0.5 and conformation 2 by 0.75.
-This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" as an initial guees, if building a model with unknown relative free energies. 
+The enthalpy of contacts unique to each conformation will be scaled by --unique_pair_scaling. In this example, the unique contacts for conformation 1 are downscaled by 0.5 and conformation 2 by 0.75.
+This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" as an initial guess, if building a model with unknown relative free energies. 
 Shared contacts between conformations are not scaled (unless specified by the --ss_h_scaling and --tt_h_scaling flags), but instead have their minimum distance averaged.
 
 More examples on how to set up protein complexes with and without quaternary networks can be found in the tutorials folder in the source repository.
