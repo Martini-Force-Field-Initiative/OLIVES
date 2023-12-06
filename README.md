@@ -30,7 +30,17 @@ To install the exact package versions used during development (python 3.7), run:
 	
     pip install numpy==1.21.5 mdtraj==1.9.7 networkx==2.3
 
-## Basic usage
+## Simulation settings
+
+OLIVES is implemented for GROMACS. When running protein topologies with the OLIVES Go-like model, we recommend the "-noddcheck" and "-rdd 2.0" flags for mdrun. For example:
+
+    gmx mdrun -deffnm production -noddcheck -rdd 2.0
+
+"-noddcheck" turns off a GROMACS domain decomposition error for pairs that become too long relative to the length of a domain (set by -rdd), abruptly ending your run.
+This could happen if a protein complex dissociates or a protein unfolds. 
+The 2 nm cutoff for domains in -rdd is where a LJ potential with energy minimum distance at 0.55 nm (the OLIVES cutoff) goes to 0, and therefore not important if missed.
+
+## Basic setup
 
 The OLIVES script can be called from the command line. The options of the program 
 can be viewed by running:
