@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 print(" o o o o o o o o o ")
-print("OLIVES is written by Kasper Busk Pedersen, 24 of April 2023.")
-print("If you use this script in your work, please cite Pedersen et al. <upcoming paper doi>")
+print("OLIVES_v1.1_M3.0.0.py is written by Kasper Busk Pedersen, 2nd of January 2024.")
+print("If you use this script in your work, please cite Pedersen et al. DOI:10.26434/chemrxiv-2023-6d61w")
 
+import math
 import argparse
 import numpy as np
 import mdtraj as md
@@ -12,10 +13,11 @@ def user_input():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', help='File containing the coarse-grained structure(s) of the protein in pdb format. Multiple conformations can be supplied separated using comma: conf1.pdb,conf2.pdb,conf3.pdb. The conformations must have the exact same topology.')
     parser.add_argument('-i', help='File containing the protein topology e.g. molecule_0.itp from martinize2.')
-    parser.add_argument('--ss_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the secondary (and quaternary) network (default=0.55).')
-    parser.add_argument('--tt_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the tertiary (and quaternary) network (default=0.55).')
-    parser.add_argument('--ss_h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for the secondary (and quaternary) network (default=1.0).')
-    parser.add_argument('--tt_h_scaling', type=float, default=1.0, help='General scaling of the hydrogen bond enthalpy matrix used for the tertiary (and quaternary) network (default=1.0).')
+    parser.add_argument('--ss_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the secondary network (and quaternary between BB beads) (default=0.55).')
+    parser.add_argument('--ts_cutoff', type=float, default=0.55, help='Cutoff distance for generation of the tertiary network (and quaternary between non BB-BB pairs) (default=0.55).')
+    parser.add_argument('--ss_scaling', type=float, default=1.0, help='Scaling of the secondary structure OLIVES bonds (default=1.0).')
+    parser.add_argument('--ts_scaling', type=float, default=1.0, help='Scaling of the tertiary structure OLIVES bonds (default=1.0).')
+    parser.add_argument('--qs_scaling', type=str, default='{}', help='Scaling of the hydrogen bonds between chain indices (chains must have different names in the pdb file format). Format is a dictionary of chain index tuples with associated scaling value. E.g. in a protein with chain A,B,C the input {(0,1):0.7,(0,2):0.5,(1,2):0.2} will scale quaternary bonds between chain A and B by 0.7, A and C by 0.5, and B and C by 0.2. The tuple must be sorted.')
     parser.add_argument('--unique_pair_scaling', type=str, default="1.0", help='Multistate mode: Scaling of the unique contacts in each conformation, provided as a comma separated sting e.g. "0.5,0.75". Shared contacts between conformations have their distances averaged.')
     parser.add_argument('--extend_itp', type=int, default=True, help='Extend the protein topology with the Go-like model (default=True).')
     parser.add_argument('--write_separate_itp', type=bool, default=False, help='Writes the Go-like model as separate itp files to be included in the .top (default=False).')
@@ -30,20 +32,32 @@ def user_input():
 args = user_input()
 input_conformations = list(args.c.split(","))
 itp_CG = args.i
-secondary_cutoff = args.ss_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter
-tertiary_cutoff = args.tt_cutoff  #[nm] - Distance cutoff for defining a hbond - hyperparameter 
-secondary_enthalpy_scaling = args.ss_h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
-tertiary_enthalpy_scaling = args.tt_h_scaling  #[kJ/mol] - Is multiplied with the relative hbond enthalpies - hyperparameter
-unique_pair_scaling = [float(i) for i in list(args.unique_pair_scaling.split(","))]  #[kJ/mol] - Is multiplied with the relative hbond enthalpies of conformational unique HBs when providing multiply conformations - hyperparameter
+secondary_cutoff = args.ss_cutoff  #[nm] - Distance cutoff for defining a hbond 
+tertiary_cutoff = args.ts_cutoff  #[nm] - Distance cutoff for defining a hbond  
+secondary_energy_scaling = args.ss_scaling  #[kJ/mol] - Is multiplied with the relative hbond energies 
+tertiary_energy_scaling = args.ts_scaling  #[kJ/mol] - Is multiplied with the relative hbond energies
+quaternary_energy_scaling = eval(args.qs_scaling)  #[kJ/mol] - Is multiplied with the relative hbond energies of bonds between chains - will overwrite any scaling of secodnary and tertiary structure 
+unique_pair_scaling = [float(i) for i in list(args.unique_pair_scaling.split(","))]  #[kJ/mol] - Is multiplied with the relative hbond energies of conformational unique HBs when providing multiply conformations
 harm_k = 500 #Used for visualization, but could be set if you want OLIVES as an elastic network
 
 #Load the conformations
 pdbs_CG = [md.load(pdb_CG) for pdb_CG in input_conformations]
 
-#Check if the number of beads match in the topologies
+#Check if the topologies match
 natoms = [pdb.n_atoms for pdb in pdbs_CG]
+nresidues = [pdb.n_residues for pdb in pdbs_CG]
+nchains = [pdb.n_chains for pdb in pdbs_CG]
 if not np.sum(natoms) == len(natoms)*np.min(natoms):
     raise ValueError('Your input conformations do not have the same number of beads. Please check your topology.')
+if not np.sum(nresidues) == len(nresidues)*np.min(nresidues):
+    raise ValueError('Your input conformations do not have the same number of residues. Please check your topology.')
+if not np.sum(nchains) == len(nchains)*np.min(nchains):
+    raise ValueError('Your input conformations do not have the same number of chains. Please check your topology.')
+
+#If quaternary structure scaling is provided check that the dictionary is the correct size (does not correct user errors in tuples)
+if bool(quaternary_energy_scaling):
+    if not int(math.factorial(nchains[0])/2) == len(quaternary_energy_scaling):
+        raise ValueError('You have provided a dictionary of tuples of with quaternary structure scaling values but the lenth of the dictionary is not factorial(nchains)/2. Please provide a dictionary of the correct size. Note that we do not check if you are creating the correct tuples. See format explaination in help with "-h".')
 
 #Check if the number of conformations match in the number of scaling values
 if not len(input_conformations) == len(unique_pair_scaling):
@@ -151,6 +165,7 @@ def knowledge_based_checks(cut_pairs,cut_dists,filters):
     dists_secondary = []
     pairs_tertiary = []
     dists_tertiary = []
+    
     for i,pair in enumerate(cut_pairs):
 
         #Sanity checks
@@ -167,7 +182,7 @@ def knowledge_based_checks(cut_pairs,cut_dists,filters):
             elif a_ndx_to_res_ndx[pair[1]] == (a_ndx_to_res_ndx[pair[0]]+2):
                 continue # exclude BB <-> BB+2 hbonds 
             else:
-                pairs_secondary.append(cut_pairs[i])
+                pairs_secondary.append(pair)
                 dists_secondary.append(cut_dists[i])
                 continue
 
@@ -200,9 +215,9 @@ def knowledge_based_checks(cut_pairs,cut_dists,filters):
                 if a_ndx_to_res_ndx[pair[0]] == a_ndx_to_res_ndx[b[1]]:
                     cys_ignore = True
         
-        pairs_tertiary.append(cut_pairs[i])
+        pairs_tertiary.append(pair)
         dists_tertiary.append(cut_dists[i])
-
+        
     return np.array(pairs_secondary),np.array(dists_secondary),np.array(pairs_tertiary),np.array(dists_tertiary)
 
 def check_HB_pairs(pairs,dists,hbond_dict,energy_dict,filters):
@@ -366,27 +381,60 @@ def construct_pair_multiples_dict(all_pairs,all_pairs_dists_energies):
                 pairs_dict.update({pair: [[all_pairs_dists_energies[s][p][1],all_pairs_dists_energies[s][p][2]]]})
     return pairs_dict
 
-def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pair_scaling,enthalpy_scaling):
+def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pair_scaling,energy_scaling,quaternary_energy_scaling,filters):
     #Formats the potentials before inserting into .itp
     #GROMACS function types
+    a_ndx_to_chain_ndx = filters[3]
     harm_function_type = 1
     LJ_function_type = 1
     
     harm_pairs = []
     LJ_pairs = []
     excluded_pairs = []
+    quaternary_pairs_to_chain = {}
+    quaternary_pair_info = []
 
     for pair, dist_energy in pairs_dict.items():
+       
+        #Check if the pair is a quaternary bond
+        if not a_ndx_to_chain_ndx[pair[0]] == a_ndx_to_chain_ndx[pair[1]]:
+            chain_one = a_ndx_to_chain_ndx[pair[0]]
+            chain_two = a_ndx_to_chain_ndx[pair[1]]
+            quaternary_pairs_to_chain.update({pair:(chain_one,chain_two)})
+            quaternary_pair_info.append([str((pair[0]+1,pair[1]+1)),str((chain_one,chain_two))])
+
+
         dists = np.array(dist_energy)[:,0]
         if len(unique_pair_scaling) > 1:
             for i,conf in enumerate(unique_pairs):
                 if pair in conf:
-                    HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling*unique_pair_scaling[i]
+                    HB_energy = np.array(dist_energy)[0,1]*energy_scaling*unique_pair_scaling[i]
+
+                    #Apply quaternary scaling if in input
+                    if bool(quaternary_energy_scaling):
+                        if pair in quaternary_pairs_to_chain:
+                            chain_ndx_tuple = quaternary_pairs_to_chain[pair]
+                            HB_energy = HB_energy*quaternary_energy_scaling[chain_ndx_tuple]
+
                     break
                 else:
-                    HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling
+                    HB_energy = np.array(dist_energy)[0,1]*energy_scaling
+                    
+                    #Apply quaternary scaling if in input
+                    if bool(quaternary_energy_scaling):
+                        if pair in quaternary_pairs_to_chain:
+                            chain_ndx_tuple = quaternary_pairs_to_chain[pair]
+                            HB_energy = HB_energy*quaternary_energy_scaling[chain_ndx_tuple]
+                    
         else:
-            HB_energy = np.array(dist_energy)[0,1]*enthalpy_scaling
+            HB_energy = np.array(dist_energy)[0,1]*energy_scaling
+                    
+            #Apply quaternary scaling if in input
+            if bool(quaternary_energy_scaling):
+                if pair in quaternary_pairs_to_chain:
+                    chain_ndx_tuple = quaternary_pairs_to_chain[pair]
+                    HB_energy = HB_energy*quaternary_energy_scaling[chain_ndx_tuple]
+
         mean_dist = np.mean(dists)  #Naive combination of minimas - ideally we would change the functional form, however we are very limited in GROMACS since tabulated potentials are currently unsupported
         #In practice this works well because the distance cutoff is small, so the standard deviation of the above mean is very small (i.e. the difference in distance between beads in two conformations having the same contact)
         
@@ -399,7 +447,7 @@ def combine_and_format_potentials(pairs_dict,networktype,unique_pairs,unique_pai
         if networktype == "tertiary":
             LJ_pairs.append([str(pair[0]+1),str(pair[1]+1),f"{LJ_function_type}","{:.10f}".format(mean_dist/np.power(2,1/6)),"{:.10f}".format(HB_energy)])
     
-    return harm_pairs,LJ_pairs,excluded_pairs
+    return harm_pairs,LJ_pairs,excluded_pairs,quaternary_pair_info
 
 ##### RUN PROGRAM #####
 print(" o o o o o o o o o ")
@@ -408,22 +456,23 @@ all_secondary_pairs = []
 all_secondary_pairs_dists_energies = []
 all_tertiary_pairs = []
 all_tertiary_pairs_dists_energies = []
+    
+#Filters to change between bead ndx and beadname, resname, and res ndx
+filters = [pdbs_CG[0].top.to_dataframe()[0]["name"],pdbs_CG[0].top.to_dataframe()[0]["resName"],pdbs_CG[0].top.to_dataframe()[0]["resSeq"],pdbs_CG[0].top.to_dataframe()[0]["chainID"]]
+a_ndx_to_bead_name = filters[0]
+a_ndx_to_res_name = filters[1]
+a_ndx_to_res_ndx = filters[2]
+a_ndx_to_chain_ndx = filters[3]
 #Interate through all input conformations and store the pair information seperately
 for p,pdb_CG in enumerate(pdbs_CG):
     print("Processing conformation {}".format(input_conformations[p]))
-    #Filters to change between bead ndx and beadname, resname, and res ndx
-    filters = [pdb_CG.top.to_dataframe()[0]["name"],pdb_CG.top.to_dataframe()[0]["resName"],pdb_CG.top.to_dataframe()[0]["resSeq"]]
-    a_ndx_to_bead_name = filters[0]
-    a_ndx_to_res_name = filters[1]
-    a_ndx_to_res_ndx = filters[2]
-    
     print("Computing distances between all pairs...")
     #Find all possible bead pairs
     all_pairs = np.array([[i,j] for i in np.arange(pdb_CG.top.n_atoms) for j in np.arange(i+1,pdb_CG.top.n_atoms)])
     
     #compute distances between all pairs and keep pairs that are below the cutoff
     all_dists = md.compute_distances(pdb_CG,all_pairs)[0]
-    #Apply rules of the OLIVES model and split into secondary and tertiary networks
+    #Apply rules of the OLIVES model and split into secondary and tertiary networks, and find quaternary pair chain id
     secondary_pairs,secondary_dists,tertiary_pairs,tertiary_dists = knowledge_based_checks(all_pairs,all_dists,filters)
     
     #Apply secondary distance cutoff
@@ -550,6 +599,7 @@ for p,pdb_CG in enumerate(pdbs_CG):
         print(" o o o o o o o o o ")
 
 
+
 info_secondary_pairs, info_tertiary_pairs, unique_secondary_pairs_for_scaling, unique_tertiary_pairs_for_scaling = get_pair_set_information(input_conformations,all_secondary_pairs,all_tertiary_pairs)
 
 #For each pair, check for if the pair occurs multiple times among all conformations 
@@ -557,8 +607,8 @@ secondary_pair_multiples_dict = construct_pair_multiples_dict(all_secondary_pair
 tertiary_pair_multiples_dict = construct_pair_multiples_dict(all_tertiary_pairs,all_tertiary_pairs_dists_energies)
 
 #Combine minimas and format the output
-secondary_harm_potentials,secondary_LJ_potentials,secondary_exclusions = combine_and_format_potentials(secondary_pair_multiples_dict,"secondary",unique_secondary_pairs_for_scaling,unique_pair_scaling,secondary_enthalpy_scaling)
-tertiary_harm_potentials,tertiary_LJ_potentials,tertiary_exclusions = combine_and_format_potentials(tertiary_pair_multiples_dict,"tertiary",unique_tertiary_pairs_for_scaling,unique_pair_scaling,tertiary_enthalpy_scaling)
+secondary_harm_potentials,secondary_LJ_potentials,secondary_exclusions,secondary_quaternary_pair_info = combine_and_format_potentials(secondary_pair_multiples_dict,"secondary",unique_secondary_pairs_for_scaling,unique_pair_scaling,secondary_energy_scaling,quaternary_energy_scaling,filters)
+tertiary_harm_potentials,tertiary_LJ_potentials,tertiary_exclusions,tertiary_quaternary_pair_info = combine_and_format_potentials(tertiary_pair_multiples_dict,"tertiary",unique_tertiary_pairs_for_scaling,unique_pair_scaling,tertiary_energy_scaling,quaternary_energy_scaling,filters)
 
 ##### WRAP-UP #####
 if args.extend_itp: 
@@ -575,6 +625,9 @@ if args.extend_itp:
             f.write("{}\n".format(' '.join(line)))
 
 if args.write_separate_itp:
+    print("If you use the --write_separate_itp True and --extend_itp False. Remember to include OLIVES itp's in your topology right after {}".format(itp_CG))
+    print("Exclusion .itps should be above the interaction .itps")
+
     #Write the model as harmonic elastic network
     with open("Harm_secondary_"+itp_CG,'w') as mo:
         output = [[""]] + ['; OLIVES secondary as harmonic bonds'.split()] + ['[ bonds ]'.split()] + secondary_harm_potentials + [[""]]
@@ -609,6 +662,7 @@ if args.write_separate_itp:
     print("Wrote: {}".format("Exclusions_secondary_"+itp_CG))
 
 if args.write_vmd_itp: 
+    print('"OLIVES_VMD_".itp can be used for VMD visualization of the secondary and tertiary networks with cg_bonds-v5.tcl: 1: Load your CG pdb, 2: source cg_bonds-v5.tcl 3: cg_bonds -cutoff 100 -top "SS.top" (you have to create this dummy top yourself and include the OLIVES_VMD_ itp) 4: Representation -> bonds 5: repeat for tertiary network 6: profit')
     #Write visualization itp for VMD "cg_bonds"
     with open(itp_CG, "r") as f:
         line_cols = []
@@ -645,13 +699,26 @@ if args.write_bond_information_file:
             mo.write("{}\n".format(' '.join(line)))
     print("Wrote: {}".format("OLIVES_info_tertiary_pairs.dat"))
 
+    if bool(quaternary_energy_scaling):
+        with open("OLIVES_info_quaternary_pairs.dat",'w') as mo:
+            output = ['; OLIVES secondary pairs in quaternary bonds'.split()] + ['; pair chainID'.split()] + secondary_quaternary_pair_info
+            for line in output:
+                mo.write("{}\n".format(' '.join(line)))
+            output = ['; OLIVES tertiary pairs in quaternary bonds'.split()] + ['; pair chainID'.split()] + tertiary_quaternary_pair_info
+            for line in output:
+                mo.write("{}\n".format(' '.join(line)))
+        print("Wrote: {}".format("OLIVES_info_quaternary_pairs.dat"))
+
+
+
 if not args.silent:
-    print("Remember to include OLIVES itp's in your topology right after {}".format(itp_CG))
-    print("Exclusion .itps should be above the interaction .itps")
-    print('"OLIVES_VMD_".itp can be used for VMD visualization of the secondary and tertiary networks with cg_bonds-v5.tcl: 1: Load your CG pdb, 2: source cg_bonds-v5.tcl 3: cg_bonds -cutoff 100 -top "SS.top" (you have to create this dummy top yourself and include the OLIVES_VMD_ itp) 4: Representation -> bonds 5: repeat for tertiary network 6: profit')
-    print("OLIVES parameters have been tested using the -scfix flag of martinize2 - if you are using multistate OLIVES, remember to combine the -scfix flag with the OLIVES scfix script")
-    print("OLIVES does not use the virtual site approach (yet) and thus does not use the martinize2 flags -govs-include. This can in lead to problems with domain decomposition if molecules break apart (usually only happens for quartenary structure which could a be desired property). In these cases it is best to use all openMP threads instead of domain decomposition, see: https://manual.gromacs.org/documentation/current/user-guide/mdrun-performance.html. A virtual site implementation is possible in the future.")
-    print("OLIVES does not require -dssp secondary structure restraints, although one can opt to restrain the secondary structure for slightly better RMSF's. If you are using multistate OLIVES, remember to combine the -dssp flag with the OLIVES dssp script")
+    print('Remember to use "gmx mdrun --noddcheck -rdd 2.0" to avoid domain decomposition warnings if OLIVES bonds gets too long.')
+    print('"-noddcheck" turns off a GROMACS domain decomposition error for pairs that become too long relative to the length of a domain (set by -rdd), abruptly ending your run.')
+    print('This could happen if a protein complex dissociates or a protein unfolds. The 2 nm cutoff for domains in -rdd is where a LJ potential with energy minimum distance at 0.55 nm (the OLIVES cutoff) goes to 0, and therefore not important if missed.')
+    print("If you experience DD errors that cannot be solved by --noddcheck, try using 1 MPI tread and all openMP threads instead of domain decomposition https://manual.gromacs.org/documentation/current/user-guide/mdrun-performance.html.")
+    print("OLIVES has been tested using the -scfix flag of martinize2 - if you are using multistate OLIVES, remember to combine the -scfix flag with the OLIVES scfix script")
+    print("OLIVES does not use the virtual site approach implemented in e.g. GoMARTINI and thus does not use the martinize2 flags -govs-include.")
+    print("OLIVES does not require -dssp secondary structure restraints, although one can opt to restrain the secondary structure at the cost of overstabilized secondary structure.")
 
 print(" o o o o o o o o o ")
 print("Done!")

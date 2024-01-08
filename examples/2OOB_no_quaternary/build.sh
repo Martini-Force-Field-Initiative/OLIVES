@@ -15,8 +15,8 @@ echo chA | gmx trjconv -f 2OOB_CG.pdb -s 2OOB_CG.pdb -o 2OOB_CG_0.pdb -n sys.ndx
 echo chB | gmx trjconv -f 2OOB_CG.pdb -s 2OOB_CG.pdb -o 2OOB_CG_1.pdb -n sys.ndx
 
 #Apply the OLIVES model	
-python3 ../../OLIVES_v1.0_M3.0.0.py -c 2OOB_CG_0.pdb -i molecule_0.itp 
-python3 ../../OLIVES_v1.0_M3.0.0.py -c 2OOB_CG_1.pdb -i molecule_1.itp
+python3 ../../OLIVES_v1.1_M3.0.0.py -c 2OOB_CG_0.pdb -i molecule_0.itp 
+python3 ../../OLIVES_v1.1_M3.0.0.py -c 2OOB_CG_1.pdb -i molecule_1.itp
 
 gmx make_ndx -f 2OOB_CG_0.pdb -o BB_0.ndx <<< 'del 0-19
 a BB

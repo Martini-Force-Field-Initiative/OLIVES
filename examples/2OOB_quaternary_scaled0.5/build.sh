@@ -5,7 +5,7 @@ rm 2OOB_martinize2.top
 #See 2OOB.top
 
 #Apply the OLIVES model	
-python3 ../../OLIVES_v1.1_M3.0.0.py -c 2OOB_CG.pdb -i molecule_0.itp 
+python3 ../../OLIVES_v1.1_M3.0.0.py -c 2OOB_CG.pdb -i molecule_0.itp --qs_scaling '{(0,1):0.5}'
 
 gmx editconf -f 2OOB_CG.pdb -o 2OOB_CG.gro -bt dodecahedron -d 2.5 -c
 
