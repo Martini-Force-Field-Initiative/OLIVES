@@ -34,9 +34,9 @@ input_conformations = list(args.c.split(","))
 itp_CG = args.i
 secondary_cutoff = args.ss_cutoff  #[nm] - Distance cutoff for defining a hbond 
 tertiary_cutoff = args.ts_cutoff  #[nm] - Distance cutoff for defining a hbond  
-secondary_energy_scaling = args.ss_scaling  #[kJ/mol] - Is multiplied with the relative hbond energies 
-tertiary_energy_scaling = args.ts_scaling  #[kJ/mol] - Is multiplied with the relative hbond energies
-quaternary_energy_scaling = eval(args.qs_scaling)  #[kJ/mol] - Is multiplied with the relative hbond energies of bonds between chains - will overwrite any scaling of secodnary and tertiary structure 
+secondary_energy_scaling = args.ss_scaling  #Is multiplied with the relative hbond energies 
+tertiary_energy_scaling = args.ts_scaling  #Is multiplied with the relative hbond energies
+quaternary_energy_scaling = eval(args.qs_scaling)  #Is multiplied with the relative hbond energies of bonds between chains - will overwrite any scaling of secodnary and tertiary structure 
 unique_pair_scaling = [float(i) for i in list(args.unique_pair_scaling.split(","))]  #[kJ/mol] - Is multiplied with the relative hbond energies of conformational unique HBs when providing multiply conformations
 harm_k = 500 #Used for visualization, but could be set if you want OLIVES as an elastic network
 
