@@ -74,7 +74,8 @@ if not len(input_conformations) == len(unique_pair_scaling):
 #cysteine (donor,acceptor) and methionine (acceptor) are not represented: approximated by the hydroxyl donor and ketone acceptor
 hbond_dict = {"GLY":{"BB":[[1,1],["AMA","AMD"]]},
               "ALA":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[0,0],["None","None"]]},
-              "CYS":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[1,1],["KEA","HYD"]]}, 
+              "CYS":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[1,1],["KEA","HYD"]]},
+              "CYP":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[1,0],["KEA","None"]],"C1":[[0,0],["None","None"]],"C2":[[0,0],["None","None"]],"C3":[[0,0],["None","None"]],"C4":[[0,0],["None","None"]]},  #palmitoylation
               "VAL":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[0,0],["None","None"]]},
               "LEU":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[0,0],["None","None"]]},
               "ILE":{"BB":[[1,1],["AMA","AMD"]],"SC1":[[0,0],["None","None"]]},
