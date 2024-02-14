@@ -45,7 +45,7 @@ The 2 nm cutoff for domains in -rdd is where a LJ potential with energy minimum 
 The OLIVES script can be called from the command line. The options of the program 
 can be viewed by running:
 
-    python3 OLIVES_v1.1_M3.0.0.py -h
+    python3 OLIVES_v1.2_M3.0.0.py -h
 
 The following command line prompt will convert an atomistic monomeric protein to a coarse-grained representation using martinize2,
 generating a topology (with default name molecule_0.itp);
@@ -54,7 +54,7 @@ generating a topology (with default name molecule_0.itp);
 
 and then apply the OLIVES model via:
 
-    python3 OLIVES_v1.1_M3.0.0.py -c "protein_CG.pdb" -i "molecule_0.itp"
+    python3 OLIVES_v1.2_M3.0.0.py -c "protein_CG.pdb" -i "molecule_0.itp"
 
 This will automatically insert the OLIVES model into the molecule_0.itp topology. There is also an option to write out the OLIVES model in a separate .itp file.
 Note that we have left out the -dssp/-ss flags of martinize2 to avoid generating secondary structure restraints. 
@@ -65,7 +65,7 @@ The generated OLIVES pairs could be used to drive biased simulations due to thei
 
 OLIVES also comes with a basic multistate functionality. A two-state model can be created by providing two conformations of the same protein (must have matching topologies):
 
-    python3 OLIVES_v1.1_M3.0.0.py -c "protein_CG_conformation_1.pdb,protein_CG_conformation_2.pdb" -i molecule_0.itp --unique_pair_scaling "0.5,0.75"
+    python3 OLIVES_v1.2_M3.0.0.py -c "protein_CG_conformation_1.pdb,protein_CG_conformation_2.pdb" -i molecule_0.itp --unique_pair_scaling "0.5,0.75"
 
 The enthalpy of contacts unique to each conformation will be scaled by --unique_pair_scaling. In this example, the unique contacts for conformation 1 are downscaled by 0.5 and conformation 2 by 0.75.
 This can be used to tune the relative free energies between conformations. Try --unique_pair_scaling "0.5,0.5" as an initial guess, if building a model with unknown relative free energies. 
