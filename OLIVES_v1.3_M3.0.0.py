@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 print(" o o o o o o o o o ")
-print("OLIVES_v1.2_M3.0.0.py is written by Kasper Busk Pedersen, February 15th 2024.")
+print("OLIVES_v1.3_M3.0.0.py is written by Kasper Busk Pedersen, February 22th 2024.")
 print("If you use this script in your work, please cite Pedersen et al. DOI:10.26434/chemrxiv-2023-6d61w")
 
 import sys
