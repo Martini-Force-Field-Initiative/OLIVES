@@ -225,6 +225,9 @@ def knowledge_based_checks(cut_pairs,cut_dists,filters,silent):
             if a_ndx_to_res_ndx[pair[1]] == a_ndx_to_res_ndx[b[0]]:
                 if a_ndx_to_res_ndx[pair[0]] == a_ndx_to_res_ndx[b[1]]:
                     cys_ignore = True
+
+        if cys_ignore:
+            continue
         
         pairs_tertiary.append(pair)
         dists_tertiary.append(cut_dists[i])
