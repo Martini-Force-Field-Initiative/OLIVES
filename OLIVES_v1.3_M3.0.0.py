@@ -510,7 +510,7 @@ for p,pdb_CG in enumerate(pdbs_CG):
     #compute distances between all pairs and keep pairs that are below the cutoff
     all_dists = md.compute_distances(pdb_CG,all_pairs)[0]
 
-    # The following if statement improves runtime
+    # The following improves runtime
     max_cutoff = np.max([secondary_cutoff,tertiary_cutoff])
     cutoff_filter = all_dists < max_cutoff
     cut_pairs = all_pairs[cutoff_filter,:]
