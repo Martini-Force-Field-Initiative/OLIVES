@@ -746,26 +746,26 @@ if args.write_vmd_itp:
     print("Wrote: {}".format("OLIVES_VMD_tertiary_"+itp_CG))
 
 if args.write_bond_information_file:
-    with open("OLIVES_info_secondary_pairs.dat",'w') as mo:
+    itp_name = itp_CG.split('.itp')[0]
+    with open("OLIVES_info_secondary_pairs_"+itp_name+".dat",'w') as mo:
         for line in info_secondary_pairs:
             mo.write("{}\n".format(' '.join(line)))
-    print("Wrote: {}".format("OLIVES_info_secondary_pairs.dat"))
+    print("Wrote: {}".format("OLIVES_info_secondary_pairs_"+itp_name+".dat"))
             
-    with open("OLIVES_info_tertiary_pairs.dat",'w') as mo:
+    with open("OLIVES_info_tertiary_pairs_"+itp_name+".dat",'w') as mo:
         for line in info_tertiary_pairs:
             mo.write("{}\n".format(' '.join(line)))
-    print("Wrote: {}".format("OLIVES_info_tertiary_pairs.dat"))
+    print("Wrote: {}".format("OLIVES_info_tertiary_pairs_"+itp_name+".dat"))
 
     if bool(quaternary_energy_scaling):
-        with open("OLIVES_info_quaternary_pairs.dat",'w') as mo:
+        with open("OLIVES_info_quaternary_pairs_"+itp_name+".dat",'w') as mo:
             output = ['; OLIVES secondary pairs in quaternary bonds'.split()] + ['; pair chainID'.split()] + secondary_quaternary_pair_info
             for line in output:
                 mo.write("{}\n".format(' '.join(line)))
             output = ['; OLIVES tertiary pairs in quaternary bonds'.split()] + ['; pair chainID'.split()] + tertiary_quaternary_pair_info
             for line in output:
                 mo.write("{}\n".format(' '.join(line)))
-        print("Wrote: {}".format("OLIVES_info_quaternary_pairs.dat"))
-
+        print("Wrote: {}".format("OLIVES_info_quaternary_pairs_"+itp_name+".dat"))
 
 
 if not silent:
