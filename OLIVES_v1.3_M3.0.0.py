@@ -510,25 +510,23 @@ for p,pdb_CG in enumerate(pdbs_CG):
     #compute distances between all pairs and keep pairs that are below the cutoff
     all_dists = md.compute_distances(pdb_CG,all_pairs)[0]
 
-    # The following if statement improves runtime if the secondary and tertiary cutoffs are the same
-    if secondary_cutoff == tertiary_cutoff:
-        cutoff_filter = all_dists < secondary_cutoff
-        cut_pairs = all_pairs[cutoff_filter,:]
-        cut_dists = all_dists[cutoff_filter]
+    # The following if statement improves runtime
+    max_cutoff = np.max([secondary_cutoff,tertiary_cutoff])
+    cutoff_filter = all_dists < max_cutoff
+    cut_pairs = all_pairs[cutoff_filter,:]
+    cut_dists = all_dists[cutoff_filter]
     #Apply rules of the OLIVES model and split into secondary and tertiary networks, and find quaternary pair chain id
-        cut_secondary_pairs,cut_secondary_dists,cut_tertiary_pairs,cut_tertiary_dists = knowledge_based_checks(cut_pairs,cut_dists,filters,silent)
-    else:
-        secondary_pairs,secondary_dists,tertiary_pairs,tertiary_dists = knowledge_based_checks(all_pairs,all_dists,filters,silent)
-    
-        #Apply secondary distance cutoff
-        secondary_cutoff_filter = secondary_dists < secondary_cutoff
-        cut_secondary_pairs = secondary_pairs[secondary_cutoff_filter,:]
-        cut_secondary_dists = secondary_dists[secondary_cutoff_filter]
-        
-        #Apply tertiary distance cutoff
-        tertiary_cutoff_filter = tertiary_dists < tertiary_cutoff
-        cut_tertiary_pairs = tertiary_pairs[tertiary_cutoff_filter,:]
-        cut_tertiary_dists = tertiary_dists[tertiary_cutoff_filter]
+    secondary_pairs,secondary_dists,tertiary_pairs,tertiary_dists = knowledge_based_checks(cut_pairs,cut_dists,filters,silent)
+
+    #Apply secondary distance cutoff
+    secondary_cutoff_filter = secondary_dists < secondary_cutoff
+    cut_secondary_pairs = secondary_pairs[secondary_cutoff_filter,:]
+    cut_secondary_dists = secondary_dists[secondary_cutoff_filter]
+
+    #Apply tertiary distance cutoff
+    tertiary_cutoff_filter = tertiary_dists < tertiary_cutoff
+    cut_tertiary_pairs = tertiary_pairs[tertiary_cutoff_filter,:]
+    cut_tertiary_dists = tertiary_dists[tertiary_cutoff_filter]
     
     #check secondary for HB pairs
     if not silent:
