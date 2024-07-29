@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-print("OLIVES_v2.0_M3.0.0.py is written by Kasper Busk Pedersen, 27th of June 2024.")
+print("OLIVES_v2.0.1_M3.0.0.py is written by Kasper Busk Pedersen, 29th of July 2024.")
 print("If you use this script in your work, please cite Pedersen et al. DOI:10.26434/chemrxiv-2023-6d61w")
 
 ### IMPORT ###
