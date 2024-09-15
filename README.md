@@ -23,9 +23,9 @@ DOI: 10.26434/chemrxiv-2023-6d61w
 
 OLIVES requires python 3.7 or greater, together with numpy, mdtraj, and networkx, which can be installed with pip:
 
-    pip install numpy mdtraj networkx>=2.5
+    pip install numpy mdtraj networkx==2.6
 
-The exact versions should not matter too much, but install networkx 2.5 or greater (version 2.5 should be compatible with python 3.9+).
+The exact versions should not matter too much, but networkx 2.6 is compatible with python 3.7-3.9).
 To install the exact package versions used during development (python 3.7), run:
 	
     pip install numpy==1.21.5 mdtraj==1.9.7 networkx==2.3
