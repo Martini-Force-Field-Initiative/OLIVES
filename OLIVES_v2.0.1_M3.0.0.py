@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 print("OLIVES_v2.0.1_M3.0.0.py is written by Kasper Busk Pedersen, 29th of July 2024.")
-print("If you use this script in your work, please cite Pedersen et al. https://pubs.acs.org/doi/10.1021/acs.jctc.4c00553 DOI: 10.1021/acs.jctc.4c00553)
+print("If you use this script in your work, please cite Pedersen et al. https://pubs.acs.org/doi/10.1021/acs.jctc.4c00553 DOI: 10.1021/acs.jctc.4c00553")
 
 ### IMPORT ###
 import math
